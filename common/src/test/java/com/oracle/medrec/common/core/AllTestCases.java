@@ -20,8 +20,6 @@ public class AllTestCases extends TestCase {
     TestSuite suite = new TestSuite();
     suite.addTest(MethodParameterValidatorImplTestCase.suite());
     suite.addTest(MethodParameterValidatingInterceptorTestCase.suite());
-    suite.addTest(MethodInvocationCacheImplTestCase.suite());
-    suite.addTest(MethodInvocationCachingInterceptorTestCase.suite());
     suite.addTest(ThrowableLoggingInterceptorTestCase.suite());
     return suite;
   }

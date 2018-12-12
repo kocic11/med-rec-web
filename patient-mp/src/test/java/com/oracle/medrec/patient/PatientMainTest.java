@@ -16,37 +16,26 @@
 
 package com.oracle.medrec.patient;
 
-import com.oracle.medrec.model.Patient;
-
-import com.oracle.medrec.model.PersonName;
-
-import io.helidon.microprofile.server.Server;
-
-import java.io.IOException;
-
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
-
-import javax.inject.Inject;
-
 import javax.json.JsonArray;
-
 import javax.json.JsonObject;
-
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.oracle.medrec.model.Patient;
+import com.oracle.medrec.model.PersonName;
+
 import org.eclipse.microprofile.config.Config;
-
 import org.eclipse.microprofile.config.ConfigProvider;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import io.helidon.microprofile.server.Server;
 
 class PatientMainTest {
     private static Server server;
@@ -65,11 +54,9 @@ class PatientMainTest {
     @Test
     void testQuery() {
         JsonArray jsonArray = ClientBuilder.newClient()
-                                           .target(new StringBuffer(getConnectionString("/api/v1/patients?lastname=")).append(lastName)
-                                                                                                                      .append("&ssn=")
-                                                                                                                      .append(ssn)
-                                                                                                                      .toString())
-                                           .request()
+                .target(new StringBuffer(getConnectionString("/api/v1/patients?lastname=")).append(lastName)
+                        .append("&ssn=").append(ssn).toString())
+                .request()
                                            .get(JsonArray.class);
         Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
         Assertions.assertTrue(ssn.equals(jsonArray.getJsonObject(0).getString("ssn")), "SSNs are not equal");
@@ -84,14 +71,14 @@ class PatientMainTest {
         Assertions.assertTrue(ssn.equals(jsonObject.getString("ssn")), "SSNs are not equal");
     }
 
-    @Test
-    void testApprovePatient() {
-        Response response = ClientBuilder.newClient()
-                                         .target(getConnectionString("/api/v1/patients/approve/1"))
-                                         .request()
-                                         .get();
-        Assertions.assertEquals(200, response.getStatus(), "Approve status code");
-    }
+    // @Test
+    // void testApprovePatient() {
+    //     Response response = ClientBuilder.newClient()
+    //                                      .target(getConnectionString("/api/v1/patients/approve/1"))
+    //                                      .request()
+    //                                      .get();
+    //     Assertions.assertEquals(200, response.getStatus(), "Approve status code");
+    // }
 
     @Test
     void testAuthenticatePatient() {

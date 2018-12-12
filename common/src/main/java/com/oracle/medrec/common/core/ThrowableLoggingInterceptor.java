@@ -1,19 +1,18 @@
 package com.oracle.medrec.common.core;
 
-import javax.annotation.Priority;
+import java.util.logging.Logger;
+
 import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.util.logging.Logger;
 
 /**
- * A CDI Interceptor that is mainly for application entry points. Before throwing
- * exceptions to outer world, we firstly write them into logs.
+ * A CDI Interceptor that is mainly for application entry points. Before
+ * throwing exceptions to outer world, we firstly write them into logs.
  *
- * @author : xiaojwu.
- *         Copyright (c) 2007, 2017, Oracle and/or its
- *         affiliates. All rights reserved.
+ * @author : xiaojwu. Copyright (c) 2007, 2017, Oracle and/or its affiliates.
+ *         All rights reserved.
  */
 @Interceptor
 @ThrowableLogged

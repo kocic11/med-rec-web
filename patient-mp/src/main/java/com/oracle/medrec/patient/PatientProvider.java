@@ -36,24 +36,21 @@ import javax.persistence.criteria.CriteriaBuilder;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-
 /**
  * Provider for Patients.
  */
 @ApplicationScoped
 public class PatientProvider extends BaseUserServiceImpl<Patient> implements PatientService {
 
-
     private EntityManager entityManager;
     private CriteriaBuilder criteriaBuilder;
 
     private Config config = ConfigProvider.getConfig();
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
-
+    
     @Produces
     private EntityManager createEntityManager() {
         return Persistence.createEntityManagerFactory(config.getValue("persistence.unit.name", String.class))
-               .createEntityManager();
+                .createEntityManager();
     }
 
     public PatientProvider() {
@@ -80,37 +77,31 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
     @Override
     public Patient findApprovedPatientBySsn(String ssn) {
         return CriteriaPersistenceSupport.findUnique(entityManager, criteriaBuilder, entityClass,
-                                                     PredicationFactory.createEqualPredication(ssn, "ssn"),
-                                                     PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
-                                                                                               "status"));
+                PredicationFactory.createEqualPredication(ssn, "ssn"),
+                PredicationFactory.createEqualPredication(Patient.Status.APPROVED, "status"));
     }
 
     @Override
     public List<Patient> findApprovedPatientsByLastName(String lastName) {
         return CriteriaPersistenceSupport.find(entityManager, criteriaBuilder, entityClass,
-                                               PredicationFactory.createEqualPredication(lastName, "name", "lastName"),
-                                               PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
-                                                                                         "status"));
+                PredicationFactory.createEqualPredication(lastName, "name", "lastName"),
+                PredicationFactory.createEqualPredication(Patient.Status.APPROVED, "status"));
     }
 
     @Override
     public List<Patient> fuzzyFindApprovedPatientsByLastNameAndSsn(String lastName, String ssn) {
         return CriteriaPersistenceSupport.find(entityManager, criteriaBuilder, entityClass, 0, 10,
-                                               PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
-                                                                                         "status"),
-                                               PredicationFactory.createLikePredication(lastName + "%", "name",
-                                                                                        "lastName"),
-                                               PredicationFactory.createLikePredication(ssn + "%", "ssn"));
+                PredicationFactory.createEqualPredication(Patient.Status.APPROVED, "status"),
+                PredicationFactory.createLikePredication(lastName + "%", "name", "lastName"),
+                PredicationFactory.createLikePredication(ssn + "%", "ssn"));
     }
 
     @Override
     public boolean authenticatePatient(String username, String password) {
-        int number =
-            CriteriaPersistenceSupport.count(entityManager, criteriaBuilder, entityClass,
-                                             PredicationFactory.createEqualPredication(username, "username"),
-                                             PredicationFactory.createEqualPredication(password, "password"),
-                                             PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
-                                                                                       "status"));
+        int number = CriteriaPersistenceSupport.count(entityManager, criteriaBuilder, entityClass,
+                PredicationFactory.createEqualPredication(username, "username"),
+                PredicationFactory.createEqualPredication(password, "password"),
+                PredicationFactory.createEqualPredication(Patient.Status.APPROVED, "status"));
         return (number == 1);
     }
 
@@ -119,14 +110,13 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
         Patient patient = getPatient(patientId);
         patient.approve();
         super.update(patient);
-        //        patientNotifier.notifyPatient(patient);
+        // patientNotifier.notifyPatient(patient);
     }
 
     @Override
     public List<Patient> getNewlyRegisteredPatients() {
         return CriteriaPersistenceSupport.find(entityManager, criteriaBuilder, entityClass,
-                                               PredicationFactory.createEqualPredication(Patient.Status.REGISTERED,
-                                                                                         "status"));
+                PredicationFactory.createEqualPredication(Patient.Status.REGISTERED, "status"));
     }
 
     @Override
@@ -134,16 +124,15 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
         Patient patient = getPatient(patientId);
         patient.deny();
         super.update(patient);
-        //        patientNotifier.notifyPatient(patient);
+        // patientNotifier.notifyPatient(patient);
     }
 
     @Override
     public Patient authenticateAndReturnPatient(String username, String password) {
         return CriteriaPersistenceSupport.findUnique(entityManager, criteriaBuilder, entityClass,
-                                                     PredicationFactory.createEqualPredication(username, "username"),
-                                                     PredicationFactory.createEqualPredication(password, "password"),
-                                                     PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
-                                                                                               "status"));
+                PredicationFactory.createEqualPredication(username, "username"),
+                PredicationFactory.createEqualPredication(password, "password"),
+                PredicationFactory.createEqualPredication(Patient.Status.APPROVED, "status"));
 
     }
 
@@ -167,9 +156,8 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
      */
     private void isDuplicateSsn(Patient patient) throws DuplicateSsnException {
         // count patient with this ssn
-        int ssnExistedAmount =
-            CriteriaPersistenceSupport.count(entityManager, criteriaBuilder, entityClass,
-                                             PredicationFactory.createEqualPredication(patient.getSsn(), "ssn"));
+        int ssnExistedAmount = CriteriaPersistenceSupport.count(entityManager, criteriaBuilder, entityClass,
+                PredicationFactory.createEqualPredication(patient.getSsn(), "ssn"));
         // if the very ssn has existed in database
         if (ssnExistedAmount > 0) {
             throw new DuplicateSsnException(patient.getSsn());

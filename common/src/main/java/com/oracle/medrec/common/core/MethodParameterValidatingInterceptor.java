@@ -1,18 +1,17 @@
 package com.oracle.medrec.common.core;
 
-import javax.annotation.Priority;
+import java.util.logging.Logger;
+
 import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.util.logging.Logger;
 
 /**
  * A CDI Interceptor for validating method's parameters legal or not.
  *
- * @author : xiaojwu.
- *         Copyright (c) 2007, 2017, Oracle and/or its
- *         affiliates. All rights reserved.
+ * @author : xiaojwu. Copyright (c) 2007, 2017, Oracle and/or its affiliates.
+ *         All rights reserved.
  */
 @Interceptor
 @MethodParameterValidated

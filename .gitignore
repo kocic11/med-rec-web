@@ -1,4 +1,7 @@
-/classes
-/target
-.*~
-*.log.*
+classes/
+target/
+.settings/
+.vscode/
+*.log*
+.classpath
+.project

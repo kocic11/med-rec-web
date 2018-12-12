@@ -10,5 +10,5 @@
 	</parent>
 	<artifactId>common</artifactId>
 	<name>common</name>
-	<packaging>ejb</packaging>
+	<packaging>jar</packaging>
 </project>
