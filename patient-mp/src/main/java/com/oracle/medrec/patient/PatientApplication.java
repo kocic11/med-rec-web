@@ -26,7 +26,7 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 /**
- * Simple Application that produces a greeting message.
+ * Simple Application.
  */
 @ApplicationScoped
 @ApplicationPath("/api/v1")

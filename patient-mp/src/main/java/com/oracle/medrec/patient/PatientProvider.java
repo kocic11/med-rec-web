@@ -23,7 +23,6 @@ import com.oracle.medrec.service.DuplicateUsernameException;
 import com.oracle.medrec.service.PatientService;
 import com.oracle.medrec.service.impl.BaseUserServiceImpl;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -31,7 +30,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.criteria.CriteriaBuilder;
 
@@ -45,18 +43,22 @@ import org.eclipse.microprofile.config.ConfigProvider;
 @ApplicationScoped
 public class PatientProvider extends BaseUserServiceImpl<Patient> implements PatientService {
 
-    private Patient patient;
-    @Produces
-    EntityManager entityManager;
-    CriteriaBuilder criteriaBuilder;
-    
+
+    private EntityManager entityManager;
+    private CriteriaBuilder criteriaBuilder;
+
     private Config config = ConfigProvider.getConfig();
     private final Logger logger = Logger.getLogger(this.getClass().getName());
-    
+
+    @Produces
+    private EntityManager createEntityManager() {
+        return Persistence.createEntityManagerFactory(config.getValue("persistence.unit.name", String.class))
+               .createEntityManager();
+    }
+
     public PatientProvider() {
         super();
-        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory(config.getValue("persistence.unit.name", String.class));
-        entityManager = entityManagerFactory.createEntityManager();
+        entityManager = createEntityManager();
         criteriaBuilder = entityManager.getCriteriaBuilder();
     }
 
@@ -70,22 +72,25 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
 
     @Override
     public Patient getPatient(Long patientId) {
-        // TODO Implement this method
-        return this.patient;
+        Patient patient = entityManager.find(entityClass, patientId);
+        entityManager.refresh(patient);
+        return patient;
     }
 
     @Override
     public Patient findApprovedPatientBySsn(String ssn) {
-        // TODO Implement this method
-        return this.patient;
+        return CriteriaPersistenceSupport.findUnique(entityManager, criteriaBuilder, entityClass,
+                                                     PredicationFactory.createEqualPredication(ssn, "ssn"),
+                                                     PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
+                                                                                               "status"));
     }
 
     @Override
     public List<Patient> findApprovedPatientsByLastName(String lastName) {
-        // TODO Implement this method
-        List<Patient> patients = new ArrayList<>();
-        patients.add(patient);
-        return patients;
+        return CriteriaPersistenceSupport.find(entityManager, criteriaBuilder, entityClass,
+                                               PredicationFactory.createEqualPredication(lastName, "name", "lastName"),
+                                               PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
+                                                                                         "status"));
     }
 
     @Override
@@ -100,38 +105,56 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
 
     @Override
     public boolean authenticatePatient(String username, String password) {
-        // TODO Implement this method
-        return true;
+        int number =
+            CriteriaPersistenceSupport.count(entityManager, criteriaBuilder, entityClass,
+                                             PredicationFactory.createEqualPredication(username, "username"),
+                                             PredicationFactory.createEqualPredication(password, "password"),
+                                             PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
+                                                                                       "status"));
+        return (number == 1);
     }
 
     @Override
     public void approvePatient(Long patientId) {
-        // TODO Implement this method
+        Patient patient = getPatient(patientId);
+        patient.approve();
+        super.update(patient);
+        //        patientNotifier.notifyPatient(patient);
     }
 
     @Override
     public List<Patient> getNewlyRegisteredPatients() {
-        // TODO Implement this method
-        List<Patient> patients = new ArrayList<>();
-        patients.add(patient);
-        return patients;
+        return CriteriaPersistenceSupport.find(entityManager, criteriaBuilder, entityClass,
+                                               PredicationFactory.createEqualPredication(Patient.Status.REGISTERED,
+                                                                                         "status"));
     }
 
     @Override
     public void denyPatient(Long patientId) {
-        // TODO Implement this method
+        Patient patient = getPatient(patientId);
+        patient.deny();
+        super.update(patient);
+        //        patientNotifier.notifyPatient(patient);
     }
 
     @Override
     public Patient authenticateAndReturnPatient(String username, String password) {
-        // TODO Implement this method
-        return patient;
+        return CriteriaPersistenceSupport.findUnique(entityManager, criteriaBuilder, entityClass,
+                                                     PredicationFactory.createEqualPredication(username, "username"),
+                                                     PredicationFactory.createEqualPredication(password, "password"),
+                                                     PredicationFactory.createEqualPredication(Patient.Status.APPROVED,
+                                                                                               "status"));
+
     }
 
     @Override
     public Patient updatePatient(Patient patient) throws DuplicateSsnException {
-        // TODO Implement this method
-        this.patient = patient;
+        // if ssn has been changed
+        if (patient.isSsnChanged()) {
+            isDuplicateSsn(patient);
+        }
+        patient = super.update(patient);
+        patient.setSsnChanged(false);
         return patient;
     }
 

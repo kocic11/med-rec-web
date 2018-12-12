@@ -31,6 +31,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -39,7 +40,7 @@ import javax.ws.rs.core.UriInfo;
 
 /**
  *
- * The message is returned as a JSON object.
+ * The patients are created, upated, deleted, and queired.
  *
  */
 @Path("/patients")
@@ -52,18 +53,12 @@ public class PatientResource {
      */
     private final PatientProvider patientProvider;
 
-    /**
-     * Using constructor injection to get a configuration property.
-     * By default this gets the value from META-INF/microprofile-config
-     *
-     * @param patientConfig the configured greeting message
-     */
     public PatientResource() {
         this.patientProvider = new PatientProvider();
     }
 
     /**
-     * Return all patients.
+     * Return selected patients.
      *
      * @return {@link JsonObject}
      */
@@ -74,13 +69,51 @@ public class PatientResource {
 
         String lastName = uriInfo.getQueryParameters().getFirst("lastname");
         String ssn = uriInfo.getQueryParameters().getFirst("ssn");
+        String id = uriInfo.getQueryParameters().getFirst("id");
         logger.finest("lastName: " + lastName);
         logger.finest("ssn: " + ssn);
+        logger.finest("id: " + id);
         return patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn);
     }
 
     /**
-     * Create the patient.
+     * Return a patient.
+     *
+     * @return {@link JsonObject}
+     */
+    @SuppressWarnings("checkstyle:designforextension")
+    @GET
+    @Path("{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Patient getPatientById(@PathParam("id") String patientId) {
+        logger.finest("id: " + patientId);
+        return patientProvider.getPatient(Long.valueOf(patientId));
+    }
+
+    /**
+     * Return a patient.
+     *
+     * @return {@link JsonObject}
+     */
+    @SuppressWarnings("checkstyle:designforextension")
+    @GET
+    @Path("/approve/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response approvePatient(@PathParam("id") String patientId) {
+        logger.finest("id: " + patientId);
+        try {
+            patientProvider.approvePatient(Long.valueOf(patientId));
+        } catch (Exception e) {
+            return Response.serverError()
+                           .type(MediaType.TEXT_PLAIN)
+                           .entity(e.getMessage())
+                           .build();
+        }
+        return Response.accepted().build();
+    }
+
+    /**
+     * Create the return Response.accepted().build();patient.
      *
      * @param patient the patient to create
      * @return {@link Response}
@@ -98,7 +131,23 @@ public class PatientResource {
                            .build();
         }
         return Response.accepted().build();
+    }
 
+    @SuppressWarnings("checkstyle:designforextension")
+    @POST
+    @Path("/authenticate")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response authenticatePatient(UserCredentials credentials) {
+
+        String username = credentials.getUsername();
+        String password = credentials.getPassword();
+        logger.finest("username: " + username);
+        logger.finest("password: " + password);
+        if (patientProvider.authenticatePatient(username, password)) {
+            return Response.ok().build();
+        }
+
+        return Response.status(Response.Status.UNAUTHORIZED).build();
     }
 
 

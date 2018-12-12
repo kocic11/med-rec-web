@@ -22,6 +22,8 @@ import com.oracle.medrec.model.PersonName;
 
 import io.helidon.microprofile.server.Server;
 
+import java.io.IOException;
+
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 
@@ -48,55 +50,73 @@ import org.junit.jupiter.api.Test;
 
 class PatientMainTest {
     private static Server server;
-    private Config config = ConfigProvider.getConfig();
+    private static Config config = ConfigProvider.getConfig();
+    private static String ssn;
+    private static String lastName;
+    private static Patient patient = new Patient();
 
 
     @BeforeAll
     public static void startTheServer() throws Exception {
         server = PatientMain.startServer();
+        createPatient();
     }
 
     @Test
-    void testPost() {
-        Client client = ClientBuilder.newClient();
-
-        Patient patient = new Patient();
-        String ssn = config.getValue("test.patient.ssn", String.class);
-        patient.setSsn(ssn);
-        PersonName patientName = new PersonName();
-        patientName.setFirstName(config.getValue("test.patient.firstName", String.class));
-        String lastName = config.getValue("test.patient.lastName", String.class);
-        patientName.setLastName(lastName);
-        patient.setName(patientName);
-        patient.setStatus(Patient.Status.APPROVED);
-        Response response = client.target(getConnectionString("/api/v1/patients"))
-                                  .request()
-                                  .post(Entity.entity(patient, MediaType.APPLICATION_JSON));
-
-        String message = response.readEntity(String.class);
-        System.out.println(message);
-        Assertions.assertEquals(Response.Status
-                                        .ACCEPTED
-                                        .getStatusCode(), response.getStatus(), "Status code");
-
-        JsonArray jsonArray = client.target(new StringBuffer(getConnectionString("/api/v1/patients?lastname=")).append(lastName)
-                                                                                                                     .append("&ssn=")
-                                                                                                                     .append(ssn)
-                                                                                                                     .toString())
-                                    .request()
-                                    .get(JsonArray.class);
+    void testQuery() {
+        JsonArray jsonArray = ClientBuilder.newClient()
+                                           .target(new StringBuffer(getConnectionString("/api/v1/patients?lastname=")).append(lastName)
+                                                                                                                      .append("&ssn=")
+                                                                                                                      .append(ssn)
+                                                                                                                      .toString())
+                                           .request()
+                                           .get(JsonArray.class);
         Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
+        Assertions.assertTrue(ssn.equals(jsonArray.getJsonObject(0).getString("ssn")), "SSNs are not equal");
     }
 
-    //    @Test
-    //    void testQuery() {
-    //
-    //        Client client = ClientBuilder.newClient();
-    //        JsonArray jsonArray = client.target(getConnectionString("/api/v1/patients/query?lastname=LastName&ssn=111222333"))
-    //                                    .request()
-    //                                    .get(JsonArray.class);
-    //        Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
-    //    }
+    @Test
+    void testGetPatient() {
+        JsonObject jsonObject = ClientBuilder.newClient()
+                                             .target(getConnectionString("/api/v1/patients/1"))
+                                             .request()
+                                             .get(JsonObject.class);
+        Assertions.assertTrue(ssn.equals(jsonObject.getString("ssn")), "SSNs are not equal");
+    }
+
+    @Test
+    void testApprovePatient() {
+        Response response = ClientBuilder.newClient()
+                                         .target(getConnectionString("/api/v1/patients/approve/1"))
+                                         .request()
+                                         .get();
+        Assertions.assertEquals(200, response.getStatus(), "Approve status code");
+    }
+
+    @Test
+    void testAuthenticatePatient() {
+        Response response =
+            ClientBuilder.newClient()
+                                         .target(getConnectionString("/api/v1/patients/authenticate"))
+                                         .request()
+                                         .post(Entity.entity(new UserCredentials(patient.getUsername(),
+                                                                                 patient.getPassword()),
+                                                             MediaType.APPLICATION_JSON));
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Authenticate status code");
+    }
+    
+    @Test
+    void testAuthenticatePatientFail() {
+        Response response =
+            ClientBuilder.newClient()
+                                         .target(getConnectionString("/api/v1/patients/authenticate"))
+                                         .request()
+                                         .post(Entity.entity(new UserCredentials("FakeName",
+                                                                                 "FakePassword"),
+                                                             MediaType.APPLICATION_JSON));
+        Assertions.assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus(), "Authenticate status code");
+    }
+
 
     @AfterAll
     static void destroyClass() {
@@ -104,7 +124,25 @@ class PatientMainTest {
         ((SeContainer) current).close();
     }
 
-    private String getConnectionString(String path) {
+    private static String getConnectionString(String path) {
         return "http://localhost:" + server.getPort() + path;
+    }
+
+    private static Response createPatient() {
+        ssn = String.valueOf(Math.random() * 1000000);
+        patient.setSsn(ssn);
+        PersonName patientName = new PersonName();
+        patientName.setFirstName("FirstName");
+        lastName = config.getValue("test.patient.lastName", String.class);
+        patientName.setLastName(lastName);
+        patient.setName(patientName);
+        patient.setStatus(Patient.Status.APPROVED);
+        patient.setUsername("username");
+        patient.setPassword("password");
+        patient.setEmail("email@oracle.com");
+        return ClientBuilder.newClient()
+                            .target(getConnectionString("/api/v1/patients"))
+                            .request()
+                            .post(Entity.entity(patient, MediaType.APPLICATION_JSON));
     }
 }
