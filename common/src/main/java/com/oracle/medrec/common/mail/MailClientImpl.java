@@ -1,23 +1,24 @@
 package com.oracle.medrec.common.mail;
 
-import com.oracle.medrec.common.core.MethodParameterValidated;
+import java.util.Date;
+import java.util.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.util.Date;
-import java.util.logging.Logger;
+
+import com.oracle.medrec.common.core.MethodParameterValidated;
 
 /**
- * Customers using MedRec don't have to use real mail systems. So by default, it is a dummy impl.
- * If you want to send actual mail message, you have to configure mail session on weblogic first.
+ * Customers using MedRec don't have to use real mail systems. So by default, it
+ * is a dummy impl. If you want to send actual mail message, you have to
+ * configure mail session on weblogic first.
  *
- * @author Copyright (c) 2007, 2017, Oracle and/or its
- *         affiliates. All rights reserved.
+ * @author Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights
+ *         reserved.
  */
 @MethodParameterValidated
 public class MailClientImpl implements MailClient {
