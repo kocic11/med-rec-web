@@ -1,6 +1,7 @@
 package com.oracle.medrec.common.persistence;
 
 import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.criteria.CriteriaBuilder;
 
 /**
@@ -11,9 +12,11 @@ import javax.persistence.criteria.CriteriaBuilder;
  *         Copyright (c) 2007, 2017, Oracle and/or its
  *         affiliates. All rights reserved.
  */
+@ApplicationScoped
 public abstract class CriteriaPersistenceService extends BasePersistenceService {
 
   protected CriteriaBuilder criteriaBuilder;
+  
 
   /**
    * Initiate CriteriaBuilder.

@@ -5,3 +5,6 @@ target/
 *.log*
 .classpath
 .project
+new.*
+*.pem
+*.p12

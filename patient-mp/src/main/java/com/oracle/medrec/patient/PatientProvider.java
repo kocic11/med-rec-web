@@ -42,6 +42,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 @ApplicationScoped
 public class PatientProvider extends BaseUserServiceImpl<Patient> implements PatientService {
 
+    private final static Logger logger = Logger.getLogger(PatientProvider.class.getName());
     private EntityManager entityManager;
     private CriteriaBuilder criteriaBuilder;
 
@@ -108,8 +109,10 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
     @Override
     public void approvePatient(Long patientId) {
         Patient patient = getPatient(patientId);
+        logger.finest("entityManager: " + entityManager);
         patient.approve();
-        super.update(patient);
+        logger.finest("patient: " + patient);
+        entityManager.merge(patient);
         // patientNotifier.notifyPatient(patient);
     }
 

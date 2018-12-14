@@ -20,7 +20,6 @@ import com.oracle.medrec.model.Patient;
 import com.oracle.medrec.service.DuplicateSsnException;
 import com.oracle.medrec.service.DuplicateUsernameException;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.RequestScoped;
@@ -46,7 +45,7 @@ import javax.ws.rs.core.UriInfo;
 @Path("/patients")
 @RequestScoped
 public class PatientResource {
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final static Logger logger = Logger.getLogger(PatientResource.class.getName());
 
     /**
      * The patient provider.
@@ -62,18 +61,21 @@ public class PatientResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Patient> getPatients(@Context UriInfo uriInfo) {
+    public Response getPatients(@Context UriInfo uriInfo) {
 
         String lastName = uriInfo.getQueryParameters().getFirst("lastname");
         String ssn = uriInfo.getQueryParameters().getFirst("ssn");
-        String id = uriInfo.getQueryParameters().getFirst("id");
         logger.finest("lastName: " + lastName);
         logger.finest("ssn: " + ssn);
-        logger.finest("id: " + id);
-        return patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn);
+
+        return Response.ok(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn))
+                .type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+                .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+                .build();
     }
 
     /**
@@ -81,7 +83,6 @@ public class PatientResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -95,7 +96,6 @@ public class PatientResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Path("/approve/{id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -104,10 +104,7 @@ public class PatientResource {
         try {
             patientProvider.approvePatient(Long.valueOf(patientId));
         } catch (Exception e) {
-            return Response.serverError()
-                           .type(MediaType.TEXT_PLAIN)
-                           .entity(e.getMessage())
-                           .build();
+            return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.getMessage()).build();
         }
         return Response.accepted().build();
     }
@@ -118,22 +115,17 @@ public class PatientResource {
      * @param patient the patient to create
      * @return {@link Response}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createPatient(Patient patient) {
         try {
             patientProvider.createPatient(patient);
         } catch (DuplicateSsnException | DuplicateUsernameException e) {
-            return Response.serverError()
-                           .type(MediaType.TEXT_PLAIN)
-                           .entity(e.getMessage())
-                           .build();
+            return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.getMessage()).build();
         }
         return Response.accepted().build();
     }
 
-    @SuppressWarnings("checkstyle:designforextension")
     @POST
     @Path("/authenticate")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -149,6 +141,5 @@ public class PatientResource {
 
         return Response.status(Response.Status.UNAUTHORIZED).build();
     }
-
 
 }

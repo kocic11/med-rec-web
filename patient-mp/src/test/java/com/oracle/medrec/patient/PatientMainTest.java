@@ -71,14 +71,14 @@ class PatientMainTest {
         Assertions.assertTrue(ssn.equals(jsonObject.getString("ssn")), "SSNs are not equal");
     }
 
-    // @Test
-    // void testApprovePatient() {
-    //     Response response = ClientBuilder.newClient()
-    //                                      .target(getConnectionString("/api/v1/patients/approve/1"))
-    //                                      .request()
-    //                                      .get();
-    //     Assertions.assertEquals(200, response.getStatus(), "Approve status code");
-    // }
+    @Test
+    void testApprovePatient() {
+        Response response = ClientBuilder.newClient()
+                                         .target(getConnectionString("/api/v1/patients/approve/1"))
+                                         .request()
+                                         .get();
+        Assertions.assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus(), "Approve status code");
+    }
 
     @Test
     void testAuthenticatePatient() {

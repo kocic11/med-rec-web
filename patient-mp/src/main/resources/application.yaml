@@ -1,0 +1,14 @@
+server:
+  sockets:
+    - secure:
+        port: 443
+        # supports all socket related properties of server
+        backlog: 1024
+        receive-buffer: 0
+        timeout: 60000
+        ssl:
+          private-key:
+            keystore-resource-path: "certificate.p12"
+            keystore-passphrase: "abcd"
+    - another:
+        port: 8081

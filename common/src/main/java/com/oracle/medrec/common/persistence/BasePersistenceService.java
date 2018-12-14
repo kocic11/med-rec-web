@@ -1,5 +1,8 @@
 package com.oracle.medrec.common.persistence;
 
+import java.util.logging.Logger;
+
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import javax.persistence.EntityManager;
@@ -15,7 +18,10 @@ import javax.validation.ConstraintViolationException;
  *         affiliates. All rights reserved.
  */
 //@TransactionAttribute(TransactionAttributeType.SUPPORTS)
+@ApplicationScoped
 public abstract class BasePersistenceService {
+
+    private static final Logger logger = Logger.getLogger(BasePersistenceService.class.getName());
 
     @Inject
     protected EntityManager entityManager;
@@ -57,7 +63,7 @@ public abstract class BasePersistenceService {
      * @param object
      */
     protected <E> E update(E object) {
-        System.out.println("entityManager: " + entityManager);
+        logger.finest("entityManager: " + entityManager);
         try {
             return entityManager.merge(object);
         } catch (ConstraintViolationException e) {

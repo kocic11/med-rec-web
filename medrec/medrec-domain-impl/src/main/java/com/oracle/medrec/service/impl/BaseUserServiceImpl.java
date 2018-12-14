@@ -2,6 +2,7 @@ package com.oracle.medrec.service.impl;
 
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.context.ApplicationScoped;
 
 import com.oracle.medrec.common.persistence.CriteriaPersistenceService;
 import com.oracle.medrec.common.persistence.CriteriaPersistenceSupport;
@@ -19,7 +20,8 @@ import com.oracle.medrec.service.DuplicateUsernameException;
  *         Copyright (c) 2007, 2017, Oracle and/or its
  *         affiliates. All rights reserved.
  */
-@TransactionAttribute(TransactionAttributeType.SUPPORTS)
+// @TransactionAttribute(TransactionAttributeType.SUPPORTS)
+@ApplicationScoped
 public abstract class BaseUserServiceImpl<T extends User> extends CriteriaPersistenceService {
 
   @SuppressWarnings("unchecked")
