@@ -17,8 +17,8 @@
 		<module>medrec-facade-impl</module>
 		<module>medrec-jaxrs-facade-broker</module>
 		<module>medrec-jaxws-facade-broker</module>-->
-		<module>medrec-web</module>
-		<module>medrec-assembly</module>
+		<!-- <module>medrec-web</module>
+		<module>medrec-assembly</module> -->
 	</modules>
 	<dependencies>
 		<dependency>
