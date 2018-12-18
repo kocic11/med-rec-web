@@ -71,10 +71,12 @@ public class PatientResource {
         logger.finest("ssn: " + ssn);
 
         return Response.ok(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn))
-                .type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
+                .type(MediaType.APPLICATION_JSON)
+                .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")
                 .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
                 .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+                .header("Access-Control-Expose-Headers", "*")
                 .build();
     }
 
