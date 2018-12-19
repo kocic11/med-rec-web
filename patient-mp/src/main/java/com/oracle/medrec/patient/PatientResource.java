@@ -65,7 +65,7 @@ public class PatientResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPatients(@Context UriInfo uriInfo) {
 
-        String lastName = uriInfo.getQueryParameters().getFirst("lastname");
+        String lastName = uriInfo.getQueryParameters().getFirst("lastName");
         String ssn = uriInfo.getQueryParameters().getFirst("ssn");
         logger.finest("lastName: " + lastName);
         logger.finest("ssn: " + ssn);

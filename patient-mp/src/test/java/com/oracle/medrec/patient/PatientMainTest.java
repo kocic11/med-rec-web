@@ -51,13 +51,25 @@ class PatientMainTest {
         createPatient();
     }
 
+    // @Test
+    // void testQuery() {
+    //     JsonArray jsonArray = ClientBuilder.newClient()
+    //             .target(new StringBuffer(getConnectionString("/api/v1/patients?lastname=")).append(lastName)
+    //                     .append("&ssn=").append(ssn).toString())
+    //             .request()
+    //                                        .get(JsonArray.class);
+    //     Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
+    //     Assertions.assertTrue(ssn.equals(jsonArray.getJsonObject(0).getString("ssn")), "SSNs are not equal");
+    // }
+
     @Test
     void testQuery() {
         JsonArray jsonArray = ClientBuilder.newClient()
-                .target(new StringBuffer(getConnectionString("/api/v1/patients?lastname=")).append(lastName)
-                        .append("&ssn=").append(ssn).toString())
+                .target(getConnectionString("/api/v1/patients"))
+                .queryParam("lastName", lastName)
+                .queryParam("ssn", ssn)
                 .request()
-                                           .get(JsonArray.class);
+                .get(JsonArray.class);
         Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
         Assertions.assertTrue(ssn.equals(jsonArray.getJsonObject(0).getString("ssn")), "SSNs are not equal");
     }
