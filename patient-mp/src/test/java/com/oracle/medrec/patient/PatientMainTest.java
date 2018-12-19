@@ -65,8 +65,10 @@ class PatientMainTest {
 
     @Test
     void testGetPatient() {
+        String patientId = "1";
         JsonObject jsonObject = ClientBuilder.newClient()
-                                             .target(getConnectionString("/api/v1/patients/1"))
+                                             .target(getConnectionString("/api/v1/patients"))
+                                             .path(patientId)
                                              .request()
                                              .get(JsonObject.class);
         Assertions.assertTrue(ssn.equals(jsonObject.getString("ssn")), "SSNs are not equal");
@@ -74,8 +76,10 @@ class PatientMainTest {
 
     @Test
     void testApprovePatient() {
+        String patientId = "1";
         Response response = ClientBuilder.newClient()
-                                         .target(getConnectionString("/api/v1/patients/approve/1"))
+                                         .target(getConnectionString("/api/v1/patients/approve"))
+                                         .path(patientId)
                                          .request()
                                          .get();
         Assertions.assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus(), "Approve status code");
