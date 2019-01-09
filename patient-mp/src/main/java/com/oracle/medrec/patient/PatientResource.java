@@ -20,6 +20,8 @@ import com.oracle.medrec.model.Patient;
 import com.oracle.medrec.service.DuplicateSsnException;
 import com.oracle.medrec.service.DuplicateUsernameException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.RequestScoped;
@@ -94,9 +96,9 @@ public class PatientResource {
     }
 
     /**
-     * Return a patient.
+     * Return response.
      *
-     * @return {@link JsonObject}
+     * @return {@link Response}
      */
     @GET
     @Path("/approve/{id}")
@@ -112,7 +114,7 @@ public class PatientResource {
     }
 
     /**
-     * Create the return Response.accepted().build();patient.
+     * Create a patient.
      *
      * @param patient the patient to create
      * @return {@link Response}
@@ -120,12 +122,15 @@ public class PatientResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createPatient(Patient patient) {
+        Long patientId = null;
+        Response response = null;
         try {
-            patientProvider.createPatient(patient);
-        } catch (DuplicateSsnException | DuplicateUsernameException e) {
+            patientId = patientProvider.createPatient(patient);
+            response = Response.created(new URI("/api/v1/patients/" + patientId.toString())).build();
+        } catch (DuplicateSsnException | DuplicateUsernameException | URISyntaxException e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.getMessage()).build();
         }
-        return Response.accepted().build();
+        return response;
     }
 
     @POST

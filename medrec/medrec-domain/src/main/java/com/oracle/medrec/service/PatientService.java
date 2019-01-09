@@ -22,7 +22,7 @@ public interface PatientService {
    * @throws DuplicateUsernameException
    * @throws DuplicateSsnException
    */
-  void createPatient(Patient patient) throws DuplicateUsernameException, DuplicateSsnException;
+  Long createPatient(Patient patient) throws DuplicateUsernameException, DuplicateSsnException;
 
   /**
    * Retrieves a patient by id.

@@ -61,11 +61,12 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
     }
 
     @Override
-    public void createPatient(Patient patient) throws DuplicateUsernameException, DuplicateSsnException {
+    public Long createPatient(Patient patient) throws DuplicateUsernameException, DuplicateSsnException {
         isDuplicateSsn(patient);
         entityManager.getTransaction().begin();
         entityManager.persist(patient);
         entityManager.getTransaction().commit();
+        return patient.getId();
     }
 
     @Override
