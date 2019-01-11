@@ -60,8 +60,8 @@ class PatientMainTest {
     void testQuery() {
         JsonArray jsonArray = ClientBuilder.newClient()
                 .target(getConnectionString("/api/v1/patients"))
-                .queryParam("lastName", lastName)
-                .queryParam("ssn", ssn)
+                .path(lastName)
+                .path(ssn)
                 .request()
                 .get(JsonArray.class);
         Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
@@ -82,13 +82,12 @@ class PatientMainTest {
     @Test
     void testApprovePatient() {
         String patientId = "1";
-        JsonObject jObject = Json.createReader(new StringReader("{\"status\":\"APPROVED\"}")).readObject();
         Response response = ClientBuilder.newClient()
                                          .target(getConnectionString("/api/v1/patients"))
                                          .path(patientId)
                                          .path("status")
                                          .request()
-                                         .build("PATCH", Entity.entity(jObject, MediaType.APPLICATION_JSON))
+                                         .build("PATCH", Entity.entity(Patient.Status.APPROVED.toString(), MediaType.APPLICATION_JSON))
                                          .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
                                          .invoke();
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Approve status code");

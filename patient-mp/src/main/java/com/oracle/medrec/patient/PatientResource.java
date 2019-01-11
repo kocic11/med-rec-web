@@ -65,11 +65,12 @@ public class PatientResource {
      * @return {@link JsonObject}
      */
     @GET
+    @Path("{lastName}/{ssn}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPatients(@Context UriInfo uriInfo) {
 
-        String lastName = uriInfo.getQueryParameters().getFirst("lastName");
-        String ssn = uriInfo.getQueryParameters().getFirst("ssn");
+        String lastName = uriInfo.getPathParameters().getFirst("lastName");
+        String ssn = uriInfo.getPathParameters().getFirst("ssn");
         logger.finest("lastName: " + lastName);
         logger.finest("ssn: " + ssn);
 
@@ -101,11 +102,12 @@ public class PatientResource {
      */
     @PATCH
     @Path("/{id}/status")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response approvePatient(@PathParam("id") String patientId, JsonObject status) {
+    @Consumes(MediaType.TEXT_PLAIN)
+    public Response approvePatient(@PathParam("id") String patientId, String status) {
         logger.finest("id: " + patientId);
+        logger.finest("status: " + status);
         try {
-            if (Patient.Status.APPROVED.toString().equals(status.getString("status"))) {
+            if (Patient.Status.APPROVED.toString().equals(status)) {
                 patientProvider.approvePatient(Long.valueOf(patientId));
             } else {
                 patientProvider.denyPatient(Long.valueOf(patientId));
