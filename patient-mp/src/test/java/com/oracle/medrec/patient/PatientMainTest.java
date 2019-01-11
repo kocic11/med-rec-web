@@ -16,10 +16,14 @@
 
 package com.oracle.medrec.patient;
 
+import java.io.StringReader;
+
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
@@ -30,6 +34,7 @@ import com.oracle.medrec.model.PersonName;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -77,12 +82,31 @@ class PatientMainTest {
     @Test
     void testApprovePatient() {
         String patientId = "1";
+        JsonObject jObject = Json.createReader(new StringReader("{\"status\":\"APPROVED\"}")).readObject();
         Response response = ClientBuilder.newClient()
-                                         .target(getConnectionString("/api/v1/patients/approve"))
+                                         .target(getConnectionString("/api/v1/patients"))
                                          .path(patientId)
+                                         .path("status")
                                          .request()
-                                         .get();
-        Assertions.assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus(), "Approve status code");
+                                         .build("PATCH", Entity.entity(jObject, MediaType.APPLICATION_JSON))
+                                         .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+                                         .invoke();
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Approve status code");
+    }
+
+    @Test
+    void testDenyPatient() {
+        String patientId = "1";
+        JsonObject jObject = Json.createReader(new StringReader("{\"status\":\"DENIED\"}")).readObject();
+        Response response = ClientBuilder.newClient()
+                                         .target(getConnectionString("/api/v1/patients"))
+                                         .path(patientId)
+                                         .path("status")
+                                         .request()
+                                         .build("PATCH", Entity.entity(jObject, MediaType.APPLICATION_JSON))
+                                         .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+                                         .invoke();
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Approve status code");
     }
 
     @Test

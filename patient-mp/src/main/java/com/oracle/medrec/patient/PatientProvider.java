@@ -110,10 +110,11 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
     @Override
     public void approvePatient(Long patientId) {
         Patient patient = getPatient(patientId);
-        logger.finest("entityManager: " + entityManager);
+        entityManager.getTransaction().begin();
         patient.approve();
-        logger.finest("patient: " + patient);
         entityManager.merge(patient);
+        entityManager.getTransaction().commit();
+        
         // patientNotifier.notifyPatient(patient);
     }
 
@@ -126,8 +127,12 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
     @Override
     public void denyPatient(Long patientId) {
         Patient patient = getPatient(patientId);
+        entityManager.getTransaction().begin();
         patient.deny();
-        super.update(patient);
+        entityManager.merge(patient);
+        entityManager.getTransaction().commit();
+        
+        // super.update(patient);
         // patientNotifier.notifyPatient(patient);
     }
 

@@ -30,6 +30,7 @@ import javax.json.JsonObject;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -73,13 +74,11 @@ public class PatientResource {
         logger.finest("ssn: " + ssn);
 
         return Response.ok(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn))
-                .type(MediaType.APPLICATION_JSON)
-                .header("Access-Control-Allow-Origin", "*")
+                .type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")
                 .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
                 .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
-                .header("Access-Control-Expose-Headers", "*")
-                .build();
+                .header("Access-Control-Expose-Headers", "*").build();
     }
 
     /**
@@ -100,17 +99,21 @@ public class PatientResource {
      *
      * @return {@link Response}
      */
-    @GET
-    @Path("/approve/{id}")
+    @PATCH
+    @Path("/{id}/status")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response approvePatient(@PathParam("id") String patientId) {
+    public Response approvePatient(@PathParam("id") String patientId, JsonObject status) {
         logger.finest("id: " + patientId);
         try {
-            patientProvider.approvePatient(Long.valueOf(patientId));
+            if (Patient.Status.APPROVED.toString().equals(status.getString("status"))) {
+                patientProvider.approvePatient(Long.valueOf(patientId));
+            } else {
+                patientProvider.denyPatient(Long.valueOf(patientId));
+            }
         } catch (Exception e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.getMessage()).build();
         }
-        return Response.accepted().build();
+        return Response.ok().build();
     }
 
     /**
@@ -121,16 +124,16 @@ public class PatientResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createPatient(Patient patient) {
-        Long patientId = null;
-        Response response = null;
+    public Response createPatient(Patient patient, @Context UriInfo uriInfo) {
         try {
-            patientId = patientProvider.createPatient(patient);
-            response = Response.created(new URI("/api/v1/patients/" + patientId.toString())).build();
-        } catch (DuplicateSsnException | DuplicateUsernameException | URISyntaxException e) {
+            return Response
+                    .created(new URI(uriInfo.getPath() + "/" + patientProvider.createPatient(patient).toString()))
+                    .build();
+        } catch (DuplicateSsnException | DuplicateUsernameException e) {
+            return Response.status(Response.Status.CONFLICT).entity(patient).build();
+        } catch (Exception e) {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.getMessage()).build();
         }
-        return response;
     }
 
     @POST
