@@ -20,7 +20,6 @@ public class AllTestCases extends TestCase {
     TestSuite suite = new TestSuite();
     suite.addTest(com.oracle.medrec.common.util.AllTestCases.suite());
     suite.addTest(com.oracle.medrec.common.core.AllTestCases.suite());
-    suite.addTest(com.oracle.medrec.common.naming.AllTestCases.suite());
     suite.addTest(com.oracle.medrec.common.messaging.AllTestCases.suite());
     return suite;
   }

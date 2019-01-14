@@ -16,14 +16,14 @@
 
 package com.oracle.medrec.patient;
 
-import java.io.StringReader;
+import java.util.Random;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
@@ -36,8 +36,10 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.helidon.microprofile.server.Server;
@@ -47,91 +49,123 @@ class PatientMainTest {
     private static Config config = ConfigProvider.getConfig();
     private static String ssn;
     private static String lastName;
+    private static String patientId;
     private static Patient patient = new Patient();
-
+    private final static Logger logger = Logger.getLogger(PatientMainTest.class.getName());
 
     @BeforeAll
     public static void startTheServer() throws Exception {
+        LogManager.getLogManager().readConfiguration(PatientMain.class.getResourceAsStream("/logging.properties"));
         server = PatientMain.startServer();
-        createPatient();
+    }
+
+    @BeforeEach
+    public void createPatient() {
+        Random random = new Random();
+        ssn = String.valueOf(100000000 + random.nextInt(900000000));
+        patient.setSsn(ssn);
+        PersonName patientName = new PersonName();
+        patientName.setFirstName("FirstName");
+        lastName = config.getValue("test.patient.lastName", String.class);
+        patientName.setLastName(lastName);
+        patient.setName(patientName);
+        patient.setStatus(Patient.Status.APPROVED);
+        patient.setUsername("username" + ssn);
+        patient.setPassword("password");
+        patient.setEmail("email" + ssn + "@oracle.com");
+        logger.finest(patient.toString());
+
+        String location = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients")).request()
+                .post(Entity.entity(patient, MediaType.APPLICATION_JSON)).getHeaderString("Location");
+
+        logger.finest("Location: " + location);
+        if (location != null && !location.isEmpty()) {
+            patientId = location.substring(location.lastIndexOf("/") + 1, location.length());
+        }
+    }
+
+    @AfterEach
+    public void denyPatient() {
+        ClientBuilder.newClient().target(getConnectionString("/api/v1/patients")).path(patientId).path("status")
+                .request().build("PATCH", Entity.entity(Patient.Status.DENIED.toString(), MediaType.APPLICATION_JSON))
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true).invoke();
     }
 
     @Test
-    void testQuery() {
-        JsonArray jsonArray = ClientBuilder.newClient()
-                .target(getConnectionString("/api/v1/patients"))
-                .path(lastName)
-                .path(ssn)
-                .request()
-                .get(JsonArray.class);
+    public void testFindPatientsByLastNameAndSsn() {
+        logger.finest("ssn: " + ssn);
+        logger.finest("lastName: " + lastName);
+        JsonArray response = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
+                .queryParam("lastName", lastName).queryParam("ssn", ssn).request().get(JsonArray.class);
+        logger.finest("response: " + response);
+        Assertions.assertEquals(1, response.size(), "Size of 1");
+        Assertions.assertTrue(ssn.equals(response.getJsonObject(0).getString("ssn")), "SSNs are not equal");
+    }
+
+    @Test
+    void testFindPatientBySsn() {
+        JsonArray jsonArray = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
+                .queryParam("ssn", ssn).request().get(JsonArray.class);
+        Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
+        Assertions.assertTrue(ssn.equals(jsonArray.getJsonObject(0).getString("ssn")), "SSNs are not equal");
+    }
+
+    @Test
+    void testFindPatientByLastName() {
+        JsonArray jsonArray = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
+                .queryParam("lastName", lastName).request().get(JsonArray.class);
         Assertions.assertEquals(1, jsonArray.size(), "Size of 1");
         Assertions.assertTrue(ssn.equals(jsonArray.getJsonObject(0).getString("ssn")), "SSNs are not equal");
     }
 
     @Test
     void testGetPatient() {
-        String patientId = "1";
-        JsonObject jsonObject = ClientBuilder.newClient()
-                                             .target(getConnectionString("/api/v1/patients"))
-                                             .path(patientId)
-                                             .request()
-                                             .get(JsonObject.class);
+        JsonObject jsonObject = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
+                .path(patientId).request().get(JsonObject.class);
         Assertions.assertTrue(ssn.equals(jsonObject.getString("ssn")), "SSNs are not equal");
     }
 
     @Test
     void testApprovePatient() {
-        String patientId = "1";
-        Response response = ClientBuilder.newClient()
-                                         .target(getConnectionString("/api/v1/patients"))
-                                         .path(patientId)
-                                         .path("status")
-                                         .request()
-                                         .build("PATCH", Entity.entity(Patient.Status.APPROVED.toString(), MediaType.APPLICATION_JSON))
-                                         .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                                         .invoke();
+        Response response = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients")).path(patientId)
+                .path("status").request()
+                .build("PATCH", Entity.entity(Patient.Status.APPROVED.toString(), MediaType.APPLICATION_JSON))
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true).invoke();
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Approve status code");
+        JsonObject jsonObject = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
+                .path(patientId).request().get(JsonObject.class);
+        Assertions.assertEquals(Patient.Status.APPROVED.toString(), jsonObject.getString("status"),
+                "Patient status");
     }
 
     @Test
     void testDenyPatient() {
-        String patientId = "1";
-        JsonObject jObject = Json.createReader(new StringReader("{\"status\":\"DENIED\"}")).readObject();
-        Response response = ClientBuilder.newClient()
-                                         .target(getConnectionString("/api/v1/patients"))
-                                         .path(patientId)
-                                         .path("status")
-                                         .request()
-                                         .build("PATCH", Entity.entity(jObject, MediaType.APPLICATION_JSON))
-                                         .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                                         .invoke();
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Approve status code");
+        Response response = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients")).path(patientId)
+                .path("status").request()
+                .build("PATCH", Entity.entity(Patient.Status.DENIED.toString(), MediaType.APPLICATION_JSON))
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true).invoke();
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Deny status code");
+        JsonObject jsonObject = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
+                .path(patientId).request().get(JsonObject.class);
+        Assertions.assertEquals(Patient.Status.DENIED.toString(), jsonObject.getString("status"), "Patient status");
     }
 
     @Test
     void testAuthenticatePatient() {
-        Response response =
-            ClientBuilder.newClient()
-                                         .target(getConnectionString("/api/v1/patients/authenticate"))
-                                         .request()
-                                         .post(Entity.entity(new UserCredentials(patient.getUsername(),
-                                                                                 patient.getPassword()),
-                                                             MediaType.APPLICATION_JSON));
+        Response response = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients/authenticate"))
+                .request().post(Entity.entity(new UserCredentials(patient.getUsername(), patient.getPassword()),
+                        MediaType.APPLICATION_JSON));
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Authenticate status code");
     }
-    
+
     @Test
     void testAuthenticatePatientFail() {
-        Response response =
-            ClientBuilder.newClient()
-                                         .target(getConnectionString("/api/v1/patients/authenticate"))
-                                         .request()
-                                         .post(Entity.entity(new UserCredentials("FakeName",
-                                                                                 "FakePassword"),
-                                                             MediaType.APPLICATION_JSON));
-        Assertions.assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus(), "Authenticate status code");
+        Response response = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients/authenticate"))
+                .request()
+                .post(Entity.entity(new UserCredentials("FakeName", "FakePassword"), MediaType.APPLICATION_JSON));
+        Assertions.assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus(),
+                "Authenticate status code");
     }
-
 
     @AfterAll
     static void destroyClass() {
@@ -141,23 +175,5 @@ class PatientMainTest {
 
     private static String getConnectionString(String path) {
         return "http://localhost:" + server.getPort() + path;
-    }
-
-    private static Response createPatient() {
-        ssn = String.valueOf(Math.random() * 1000000);
-        patient.setSsn(ssn);
-        PersonName patientName = new PersonName();
-        patientName.setFirstName("FirstName");
-        lastName = config.getValue("test.patient.lastName", String.class);
-        patientName.setLastName(lastName);
-        patient.setName(patientName);
-        patient.setStatus(Patient.Status.APPROVED);
-        patient.setUsername("username");
-        patient.setPassword("password");
-        patient.setEmail("email@oracle.com");
-        return ClientBuilder.newClient()
-                            .target(getConnectionString("/api/v1/patients"))
-                            .request()
-                            .post(Entity.entity(patient, MediaType.APPLICATION_JSON));
     }
 }

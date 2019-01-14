@@ -16,18 +16,13 @@
 
 package com.oracle.medrec.patient;
 
-import com.oracle.medrec.model.Patient;
-import com.oracle.medrec.service.DuplicateSsnException;
-import com.oracle.medrec.service.DuplicateUsernameException;
-
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.RequestScoped;
-
 import javax.json.JsonObject;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
@@ -39,6 +34,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import com.oracle.medrec.model.Patient;
+import com.oracle.medrec.service.DuplicateSsnException;
+import com.oracle.medrec.service.DuplicateUsernameException;
 
 /**
  *
@@ -65,16 +64,37 @@ public class PatientResource {
      * @return {@link JsonObject}
      */
     @GET
-    @Path("{lastName}/{ssn}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPatients(@Context UriInfo uriInfo) {
 
-        String lastName = uriInfo.getPathParameters().getFirst("lastName");
-        String ssn = uriInfo.getPathParameters().getFirst("ssn");
+        String lastName = uriInfo.getQueryParameters().getFirst("lastName");
+        String ssn = uriInfo.getQueryParameters().getFirst("ssn");
         logger.finest("lastName: " + lastName);
         logger.finest("ssn: " + ssn);
+        List<Patient> patients = new ArrayList<Patient>();
 
-        return Response.ok(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn))
+        if (lastName == null) {
+            patients.add(patientProvider.findApprovedPatientBySsn(ssn));
+            return Response.ok(patients).type(MediaType.APPLICATION_JSON)
+                    .header("Access-Control-Allow-Origin", "*").header("Access-Control-Allow-Credentials", "true")
+                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+                    .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+                    .header("Access-Control-Expose-Headers", "*").build();
+        }
+
+        if (ssn == null) {
+            patients.addAll(patientProvider.findApprovedPatientsByLastName(lastName));
+            return Response.ok(patients)
+                    .type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Allow-Credentials", "true")
+                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+                    .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+                    .header("Access-Control-Expose-Headers", "*").build();
+        }
+        
+        patients.addAll(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn));
+        logger.finest("List of patients: " + patients.toString());
+        return Response.ok(patients)
                 .type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")
                 .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
@@ -102,7 +122,6 @@ public class PatientResource {
      */
     @PATCH
     @Path("/{id}/status")
-    @Consumes(MediaType.TEXT_PLAIN)
     public Response approvePatient(@PathParam("id") String patientId, String status) {
         logger.finest("id: " + patientId);
         logger.finest("status: " + status);

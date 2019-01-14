@@ -170,4 +170,10 @@ public class Patient extends RegularUser {
   public enum Gender {
     MALE, FEMALE
   }
+
+  @Override
+  public String toString() {
+    StringBuffer buffer = new StringBuffer().append("ssn: ").append(ssn).append(", lastName: ").append(super.getName().getLastName());
+    return buffer.toString();
+  }
 }

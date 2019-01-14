@@ -8,7 +8,7 @@
     <class>com.oracle.medrec.common.core.MethodParameterValidatingInterceptor</class>
     <class>com.oracle.medrec.common.core.ThrowableLoggingInterceptor</class>
   </interceptors>
-  <decorators>
+  <!-- <decorators>
     <class>com.oracle.medrec.common.naming.CachingNamingClientDecorator</class>
-  </decorators>
+  </decorators> -->
 </beans>
