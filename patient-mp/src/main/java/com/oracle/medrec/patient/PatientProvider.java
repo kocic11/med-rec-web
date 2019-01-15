@@ -149,15 +149,19 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
     public Patient updatePatient(Patient patient) throws DuplicateSsnException {
         logger.finest("patient: " + patient);
         logger.finest("patientId: " + patient.getId());
+
         // if ssn has been changed
         if (patient.isSsnChanged()) {
             isDuplicateSsn(patient);
         }
+
         entityManager.getTransaction().begin();
         patient = entityManager.merge(patient);
         entityManager.getTransaction().commit();
+
         patient.setSsnChanged(false);
         logger.finest("patient: " + patient);
+        
         return patient;
     }
 

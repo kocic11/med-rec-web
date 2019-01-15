@@ -137,7 +137,6 @@ public class PatientResource {
     }
 
     @PUT
-    @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updatePatient(Patient patient) {
         logger.finest("patient: " + patient);
