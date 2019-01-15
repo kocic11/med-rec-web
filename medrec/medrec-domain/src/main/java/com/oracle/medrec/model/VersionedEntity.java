@@ -23,7 +23,7 @@ public abstract class VersionedEntity extends BaseEntity {
     return version;
   }
 
-  protected void setVersion(Integer version) {
+  public void setVersion(Integer version) {
     this.version = version;
   }
 }

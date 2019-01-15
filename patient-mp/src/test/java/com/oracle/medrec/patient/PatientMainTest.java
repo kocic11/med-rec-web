@@ -16,6 +16,10 @@
 
 package com.oracle.medrec.patient;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.io.IOException;
 import java.util.Random;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -29,11 +33,16 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 import com.oracle.medrec.model.Patient;
 import com.oracle.medrec.model.PersonName;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.persistence.jpa.jpql.Assert;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -73,6 +82,7 @@ class PatientMainTest {
         patient.setUsername("username" + ssn);
         patient.setPassword("password");
         patient.setEmail("email" + ssn + "@oracle.com");
+        patient.setGender(Patient.Gender.MALE);
         logger.finest(patient.toString());
 
         String location = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients")).request()
@@ -134,8 +144,7 @@ class PatientMainTest {
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Approve status code");
         JsonObject jsonObject = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
                 .path(patientId).request().get(JsonObject.class);
-        Assertions.assertEquals(Patient.Status.APPROVED.toString(), jsonObject.getString("status"),
-                "Patient status");
+        Assertions.assertEquals(Patient.Status.APPROVED.toString(), jsonObject.getString("status"), "Patient status");
     }
 
     @Test
@@ -144,11 +153,37 @@ class PatientMainTest {
                 .path("status").request()
                 .build("PATCH", Entity.entity(Patient.Status.DENIED.toString(), MediaType.APPLICATION_JSON))
                 .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true).invoke();
-        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Deny status code");
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Deny status code");
         JsonObject jsonObject = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
                 .path(patientId).request().get(JsonObject.class);
-        Assertions.assertEquals(Patient.Status.DENIED.toString(), jsonObject.getString("status"), "Patient status");
+        assertEquals(Patient.Status.DENIED.toString(), jsonObject.getString("status"), "Patient status");
     }
+
+    // @Test
+    // void testUpdatePatient() {
+    //     JsonObject jsonObject = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients"))
+    //             .path(patientId).request().get(JsonObject.class);
+    //     System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX " + jsonObject);
+    //     ObjectMapper objectMapper = new ObjectMapper();
+    //     objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    //     objectMapper.setVisibility(
+    //             VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+    //     try {
+    //         Patient patient = objectMapper.readValue(jsonObject.toString(), Patient.class);
+    //         patient.setGender(Patient.Gender.FEMALE);
+    //         patient.setVersion(patient.getVersion() + 1);
+    //         System. out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX " + patient.getGender().toString());
+    //         ClientBuilder.newClient().target(getConnectionString("/api/v1/patients")).path(patientId).request()
+    //                 .put(Entity.entity(patient, MediaType.APPLICATION_JSON));
+    //         jsonObject = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients")).path(patientId)
+    //                 .request().get(JsonObject.class);
+    //         System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX " + jsonObject);
+    //         assertEquals(patient.getGender(), jsonObject.getString("gender"));
+    //     } catch (IOException e) {
+    //         fail(e.getMessage());
+    //     }
+
+    // }
 
     @Test
     void testAuthenticatePatient() {
@@ -175,5 +210,6 @@ class PatientMainTest {
 
     private static String getConnectionString(String path) {
         return "http://localhost:" + server.getPort() + path;
+        // return "http://localhost:8081" + path;
     }
 }

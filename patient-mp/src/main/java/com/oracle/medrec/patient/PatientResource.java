@@ -27,6 +27,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -75,8 +76,8 @@ public class PatientResource {
 
         if (lastName == null) {
             patients.add(patientProvider.findApprovedPatientBySsn(ssn));
-            return Response.ok(patients).type(MediaType.APPLICATION_JSON)
-                    .header("Access-Control-Allow-Origin", "*").header("Access-Control-Allow-Credentials", "true")
+            return Response.ok(patients).type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Allow-Credentials", "true")
                     .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
                     .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
                     .header("Access-Control-Expose-Headers", "*").build();
@@ -84,18 +85,16 @@ public class PatientResource {
 
         if (ssn == null) {
             patients.addAll(patientProvider.findApprovedPatientsByLastName(lastName));
-            return Response.ok(patients)
-                    .type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
+            return Response.ok(patients).type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
                     .header("Access-Control-Allow-Credentials", "true")
                     .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
                     .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
                     .header("Access-Control-Expose-Headers", "*").build();
         }
-        
+
         patients.addAll(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn));
         logger.finest("List of patients: " + patients.toString());
-        return Response.ok(patients)
-                .type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
+        return Response.ok(patients).type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")
                 .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
                 .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
@@ -135,6 +134,18 @@ public class PatientResource {
             return Response.serverError().type(MediaType.TEXT_PLAIN).entity(e.getMessage()).build();
         }
         return Response.ok().build();
+    }
+
+    @PUT
+    @Path("{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updatePatient(Patient patient) {
+        logger.finest("patient: " + patient);
+        try {
+            return Response.ok(patientProvider.updatePatient(patient)).build();
+        } catch (DuplicateSsnException e) {
+            return Response.status(Response.Status.CONFLICT).entity(patient).build();
+        }
     }
 
     /**
