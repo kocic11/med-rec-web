@@ -13,6 +13,8 @@ import javax.validation.constraints.Size;
 @MappedSuperclass
 public abstract class RegularUser extends User {
 
+  private static final long serialVersionUID = -2685274119694685394L;
+
   private PersonName name = new PersonName();
 
   @Size(min = 1, max = 12)

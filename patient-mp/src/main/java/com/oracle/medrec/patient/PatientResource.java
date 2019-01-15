@@ -70,7 +70,6 @@ public class PatientResource {
 
         String lastName = uriInfo.getQueryParameters().getFirst("lastName");
         String ssn = uriInfo.getQueryParameters().getFirst("ssn");
-        String status = uriInfo.getQueryParameters().getFirst("status");
         logger.finest("lastName: " + lastName);
         logger.finest("ssn: " + ssn);
         List<Patient> patients = new ArrayList<Patient>();
