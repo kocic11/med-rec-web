@@ -70,6 +70,7 @@ public class PatientResource {
 
         String lastName = uriInfo.getQueryParameters().getFirst("lastName");
         String ssn = uriInfo.getQueryParameters().getFirst("ssn");
+        String status = uriInfo.getQueryParameters().getFirst("status");
         logger.finest("lastName: " + lastName);
         logger.finest("ssn: " + ssn);
         List<Patient> patients = new ArrayList<Patient>();
@@ -114,6 +115,38 @@ public class PatientResource {
         return patientProvider.getPatient(Long.valueOf(patientId));
     }
 
+    /**
+     * Return selected patients.
+     *
+     * @return {@link JsonObject}
+     */
+    @GET
+    @Path("/registered")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Patient> getNewlyRegisteredPatients() {
+        return patientProvider.getNewlyRegisteredPatients();
+    }
+
+    /**
+     * Return selected patients.
+     *
+     * @return {@link JsonObject}
+     */
+    @POST
+    @Path("/authenticate-and-return")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAuthenticateAndReturnPatient(UserCredentials credentials) {
+        String username = credentials.getUsername();
+        String password = credentials.getPassword();
+        logger.finest("username: " + username);
+        logger.finest("password: " + password);
+        if (patientProvider.authenticatePatient(username, password)) {
+            return Response.ok().build();
+        }
+
+        return Response.status(Response.Status.UNAUTHORIZED).build();
+    }
+    
     /**
      * Return response.
      *

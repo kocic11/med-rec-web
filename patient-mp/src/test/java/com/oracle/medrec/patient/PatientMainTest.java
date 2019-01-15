@@ -183,6 +183,31 @@ class PatientMainTest {
     }
 
     @Test
+    void testGetNewlyRegisteredPatients() {
+        JsonObject jsonObject = ClientBuilder.newClient().target(getConnectionString(path)).path(patientId).request()
+                .get(JsonObject.class);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        objectMapper.setVisibility(
+                VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+        try {
+            Patient patient = objectMapper.readValue(jsonObject.toString(), Patient.class);
+            patient.setStatus(Patient.Status.REGISTERED);
+
+            ClientBuilder.newClient().target(getConnectionString(path)).request()
+                    .put(Entity.entity(patient, MediaType.APPLICATION_JSON));
+
+            JsonArray jsonArray = ClientBuilder.newClient().target(getConnectionString(path)).path("registered").request()
+                    .get(JsonArray.class);
+
+            assertEquals(jsonArray.size(), jsonArray.size(), "Size is 1");
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
     void testAuthenticatePatient() {
         Response response = ClientBuilder.newClient().target(getConnectionString("/api/v1/patients/authenticate"))
                 .request().post(Entity.entity(new UserCredentials(patient.getUsername(), patient.getPassword()),
@@ -197,6 +222,14 @@ class PatientMainTest {
                 .post(Entity.entity(new UserCredentials("FakeName", "FakePassword"), MediaType.APPLICATION_JSON));
         Assertions.assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus(),
                 "Authenticate status code");
+    }
+
+    @Test
+    void testAuthenticateAndReturnPatient() {
+        Response response = ClientBuilder.newClient().target(getConnectionString(path)).path("authenticate-and-return").request()
+                .post(Entity.entity(new UserCredentials(patient.getUsername(), patient.getPassword()),
+                MediaType.APPLICATION_JSON));
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Authenticate status code");
     }
 
     @AfterAll
