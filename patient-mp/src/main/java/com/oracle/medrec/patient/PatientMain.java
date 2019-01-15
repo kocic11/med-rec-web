@@ -16,16 +16,19 @@
 
 package com.oracle.medrec.patient;
 
-import io.helidon.microprofile.server.Server;
-
 import java.io.IOException;
-
+import java.util.logging.Level;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
+import io.helidon.microprofile.server.Server;
 
 /**
  * Main method simulating trigger of main method of the server.
  */
 public final class PatientMain {
+
+    private static final Logger logger = LogManager.getLogManager().getLogger(PatientMain.class.getName());
 
     /**
      * Cannot be instantiated.
@@ -42,7 +45,7 @@ public final class PatientMain {
 
         Server server = startServer();
 
-        System.out.println("http://localhost:" + server.getPort());
+        logger.log(Level.INFO, "http://localhost:" + server.getPort());
     }
 
     /**

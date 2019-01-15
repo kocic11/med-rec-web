@@ -19,6 +19,7 @@ package com.oracle.medrec.patient;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.RequestScoped;
@@ -48,7 +49,7 @@ import com.oracle.medrec.service.DuplicateUsernameException;
 @Path("/patients")
 @RequestScoped
 public class PatientResource {
-    private final static Logger logger = Logger.getLogger(PatientResource.class.getName());
+    private static final Logger logger = Logger.getLogger(PatientResource.class.getName());
 
     /**
      * The patient provider.
@@ -70,30 +71,20 @@ public class PatientResource {
 
         String lastName = uriInfo.getQueryParameters().getFirst("lastName");
         String ssn = uriInfo.getQueryParameters().getFirst("ssn");
-        logger.finest("lastName: " + lastName);
-        logger.finest("ssn: " + ssn);
-        List<Patient> patients = new ArrayList<Patient>();
+        logger.log(Level.FINEST, () -> "lastName: " + lastName);
+        logger.log(Level.FINEST, () -> "ssn: " + ssn);
+        List<Patient> patients = new ArrayList<>();
 
         if (lastName == null) {
             patients.add(patientProvider.findApprovedPatientBySsn(ssn));
-            return Response.ok(patients).type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Credentials", "true")
-                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
-                    .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
-                    .header("Access-Control-Expose-Headers", "*").build();
-        }
-
-        if (ssn == null) {
+        } else if (ssn == null) {
             patients.addAll(patientProvider.findApprovedPatientsByLastName(lastName));
-            return Response.ok(patients).type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Credentials", "true")
-                    .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
-                    .header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
-                    .header("Access-Control-Expose-Headers", "*").build();
+        } else {
+            patients.addAll(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn));
         }
 
-        patients.addAll(patientProvider.fuzzyFindApprovedPatientsByLastNameAndSsn(lastName, ssn));
-        logger.finest("List of patients: " + patients.toString());
+        logger.log(Level.FINEST, () -> "List of patients: " + patients.toString());
+
         return Response.ok(patients).type(MediaType.APPLICATION_JSON).header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Allow-Credentials", "true")
                 .header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
@@ -110,7 +101,7 @@ public class PatientResource {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Patient getPatientById(@PathParam("id") String patientId) {
-        logger.finest("id: " + patientId);
+        logger.log(Level.FINEST, () -> "id: " + patientId);
         return patientProvider.getPatient(Long.valueOf(patientId));
     }
 
@@ -137,15 +128,12 @@ public class PatientResource {
     public Response getAuthenticateAndReturnPatient(UserCredentials credentials) {
         String username = credentials.getUsername();
         String password = credentials.getPassword();
-        logger.finest("username: " + username);
-        logger.finest("password: " + password);
-        if (patientProvider.authenticatePatient(username, password)) {
-            return Response.ok().build();
-        }
+        logger.log(Level.FINEST, () -> "username: " + username);
+        logger.log(Level.FINEST, () -> "password: " + password);
+        return Response.ok(patientProvider.authenticateAndReturnPatient(username, password)).build();
 
-        return Response.status(Response.Status.UNAUTHORIZED).build();
     }
-    
+
     /**
      * Return response.
      *
@@ -154,8 +142,8 @@ public class PatientResource {
     @PATCH
     @Path("/{id}/status")
     public Response approvePatient(@PathParam("id") String patientId, String status) {
-        logger.finest("id: " + patientId);
-        logger.finest("status: " + status);
+        logger.log(Level.FINEST, () -> "id: " + patientId);
+        logger.log(Level.FINEST, () -> "status: " + status);
         try {
             if (Patient.Status.APPROVED.toString().equals(status)) {
                 patientProvider.approvePatient(Long.valueOf(patientId));
@@ -171,7 +159,7 @@ public class PatientResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updatePatient(Patient patient) {
-        logger.finest("patient: " + patient);
+        logger.log(Level.FINEST, () -> "patient: " + patient);
         try {
             return Response.ok(patientProvider.updatePatient(patient)).build();
         } catch (DuplicateSsnException e) {
@@ -182,7 +170,8 @@ public class PatientResource {
     /**
      * Create a patient.
      *
-     * @param patient the patient to create
+     * @param patient
+     *                    the patient to create
      * @return {@link Response}
      */
     @POST
@@ -206,8 +195,8 @@ public class PatientResource {
 
         String username = credentials.getUsername();
         String password = credentials.getPassword();
-        logger.finest("username: " + username);
-        logger.finest("password: " + password);
+        logger.log(Level.FINEST, () -> "username: " + username);
+        logger.log(Level.FINEST, () -> "password: " + password);
         if (patientProvider.authenticatePatient(username, password)) {
             return Response.ok().build();
         }

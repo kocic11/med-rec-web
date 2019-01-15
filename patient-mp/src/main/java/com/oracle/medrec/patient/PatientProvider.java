@@ -15,6 +15,14 @@
  */
 package com.oracle.medrec.patient;
 
+import java.util.List;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
+import javax.persistence.EntityManager;
+import javax.persistence.Persistence;
+import javax.persistence.criteria.CriteriaBuilder;
+
 import com.oracle.medrec.common.persistence.CriteriaPersistenceSupport;
 import com.oracle.medrec.common.persistence.PredicationFactory;
 import com.oracle.medrec.model.Patient;
@@ -22,16 +30,6 @@ import com.oracle.medrec.service.DuplicateSsnException;
 import com.oracle.medrec.service.DuplicateUsernameException;
 import com.oracle.medrec.service.PatientService;
 import com.oracle.medrec.service.impl.BaseUserServiceImpl;
-
-import java.util.List;
-import java.util.logging.Logger;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
-
-import javax.persistence.EntityManager;
-import javax.persistence.Persistence;
-import javax.persistence.criteria.CriteriaBuilder;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -42,12 +40,11 @@ import org.eclipse.microprofile.config.ConfigProvider;
 @ApplicationScoped
 public class PatientProvider extends BaseUserServiceImpl<Patient> implements PatientService {
 
-    private final static Logger logger = Logger.getLogger(PatientProvider.class.getName());
     private EntityManager entityManager;
     private CriteriaBuilder criteriaBuilder;
 
     private Config config = ConfigProvider.getConfig();
-    
+
     @Produces
     private EntityManager createEntityManager() {
         return Persistence.createEntityManagerFactory(config.getValue("persistence.unit.name", String.class))
@@ -147,9 +144,6 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
 
     @Override
     public Patient updatePatient(Patient patient) throws DuplicateSsnException {
-        logger.finest("patient: " + patient);
-        logger.finest("patientId: " + patient.getId());
-
         // if ssn has been changed
         if (patient.isSsnChanged()) {
             isDuplicateSsn(patient);
@@ -160,7 +154,6 @@ public class PatientProvider extends BaseUserServiceImpl<Patient> implements Pat
         entityManager.getTransaction().commit();
 
         patient.setSsnChanged(false);
-        logger.finest("patient: " + patient);
         
         return patient;
     }
